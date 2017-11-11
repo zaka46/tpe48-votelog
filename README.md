@@ -7,11 +7,11 @@ This repository records poll counts of the polling event held by TPE48, a Japane
 ## Usage
 
 `data/[YYYYMMDD].csv` 可以取得當日票數紀錄，無標頭列，每列欄位順序為 `時間戳, 候選者編號, 累計票數`。
-
+<br>
 `data_table/[YYYYMMDD].csv` 可以取得當日票數紀錄，標頭列表欄位名稱，餘列欄位順序為 `時間戳, 第一位候選者累計票數, 第二位...`。
 
 `data/[YYYYMMDD].csv` has no header, each row is consisted of `timestamp, candidate_id, accumulated_poll_count`.
-
+<br>
 `data_table/[YYYYMMDD].csv` has a header row, each following row is consisted of `timestamp, pollcount_for_candidate_1, pollcount_for_candidate_2, ...`。
 
 ## Demo
@@ -19,6 +19,8 @@ This repository records poll counts of the polling event held by TPE48, a Japane
 <div id="chartContainer" style="height: 700px; width: 100%;"></div>
 
 以上示範參考自 [CanvasJS](https://canvasjs.com/javascript-charts/multi-series-chart/){:target="_blank"} 範例程式碼
+
+Demo code is refereced from sample code of [CanvasJS](https://canvasjs.com/javascript-charts/multi-series-chart/){:target="_blank"}
 
 <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
 <script type="text/javascript">
