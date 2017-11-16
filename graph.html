@@ -7,7 +7,7 @@
 <body>
 <div id="chartContainer" style="height: 700px; width: 100%;"></div>
 <form>
-  日期 <input name="date" />
+  日期 <input name="date" placeholder="YYYYMMDD" />
   類型 <select name="type">
     <option value="0">當日</option>
     <option value="1">累積</option>
@@ -17,7 +17,7 @@
     <option value="1">指定顯示</option>
     <option value="2">指定不顯示</option>
   </select>
-  編號列表 (半形逗點分隔) <input name="list" />
+  編號列表 <input name="list" placeholder="1,2,3..." />
   <input type="submit" value="重新繪製">
 </form>
 <a href="#" onclick="showUrl()">顯示本頁網址</a>
