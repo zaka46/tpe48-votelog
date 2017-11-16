@@ -160,7 +160,7 @@ function toogleDataSeries(e) {
 }
 
 function showUrl() {
-  var url = document.location.href.split('?')[0] + '?';
+  var url = document.location.href.split('#')[0].split('?')[0] + '?';
   var params_list = [];
   Object.keys(params).forEach(function(key) {
     if(params[key] == 0 || key == 'list') return;
