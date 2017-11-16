@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>TPE48 票數變化圖繪製工具</title>
+</head>
+<body>
+<div id="chartContainer" style="height: 700px; width: 100%;"></div>
+<form>
+  日期 <input name="date" />
+  類型 <select name="type">
+    <option value="0">當日</option>
+    <option value="1">累積</option>
+  </select>
+  成員類型 <select name="filter">
+    <option value="0">顯示全部</option>
+    <option value="1">指定顯示</option>
+    <option value="2">指定不顯示</option>
+  </select>
+  編號列表 (半形逗點分隔) <input name="list" />
+  <input type="submit" value="重新繪製">
+</form>
+<a href="#" onclick="showUrl()">顯示本頁網址</a>
+<br>
+
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<script type="text/javascript">
+var vote_data = [];
+var chart;
+var today = new Date();
+var params = {
+  date: today.getFullYear() + str_pad(today.getMonth() + 1) + str_pad(today.getDate()) + '',
+  type: 0,
+  filter: 0,
+  list: []
+};
+
+var qs = document.location.href.split('?')[1];
+if(typeof(qs) !== 'undefined') {
+  qs.split('&').forEach(function(element) {
+    var param = element.split('=');
+    if(param.length == 1 || param[1].length == 0) return;
+    if(Object.keys(params).indexOf(param[0]) !== -1) {
+      param[1] = decodeURIComponent(param[1]);
+      document.getElementsByName(param[0])[0].value = param[1];
+      if(param[0] !== 'list') {
+        params[param[0]] = parseInt(param[1]);
+      } else {
+        params.list = param[1].split(',').map(function(e) {
+          return parseInt(e);
+        });
+        console.log(params.list)
+      }
+    }
+  });
+}
+
+var title = params.date + ' ' + (params.type ? '累積' : '今日') + '票數變化圖';
+
+fetch('https://zaka46.github.io/tpe48-votelog/' + (params.type ? 'data' : 'today') + '_table/' + params.date + '.csv')
+  .then(function(response) {
+    return response.text()
+  }).then(function(body) {
+    body.split("\n").forEach(function(row, index) {
+      if(index == 0) {
+        vote_data = row.split(',').map(function(element, index) {
+          if(
+            index == 0 ||
+            (params.filter == 1 && params.list.indexOf(index) == -1) ||
+            (params.filter == 2 && params.list.indexOf(index) !== -1)
+          ) return {};
+          return {
+            type: "line",
+            axisYType: "secondary",
+            xValueFormatString: "MM/DD HH:mm",
+            name: element,
+            showInLegend: true,
+            markerSize: 0,
+            dataPoints: []
+          }
+        });
+      } else {
+        row.split(',').forEach(function(element, index, array) {
+          if(index == 0) return;
+          if(typeof(vote_data[index].dataPoints) == 'undefined') return;
+          var x = new Date(array[0] * 1000);
+          vote_data[index].dataPoints.push({
+            x: x,
+            y: parseInt(element)
+          })
+        });
+      }
+    });
+    createChart();
+  });
+
+function str_pad(n) {
+  return String("0" + n).slice(-2);
+}
+
+function createChart() {
+  chart = new CanvasJS.Chart("chartContainer", {
+    title: {
+      text: title,
+      fontSize: 20,
+      fontFamily: "tahoma"
+    },
+    axisX: {
+      valueFormatString: "MM/DD HH:mm",
+      labelFontSize: 12
+    },
+    axisY2: {
+      title: "票數",
+      labelFontSize: 12,
+      titleFontSize: 15,
+/*      logarithmic: true,
+      labelFormatter: function ( e ) {
+        var suffixes = ["", "K", "M", "B"];
+        var order = Math.max(Math.floor(Math.log(e.value) / Math.log(1000)), 0);
+        if(order > suffixes.length - 1)
+          order = suffixes.length - 1;
+        var suffix = suffixes[order];
+        return CanvasJS.formatNumber(e.value / Math.pow(1000, order)) + suffix;
+      }, */
+      includeZero :false
+    },
+    toolTip: {
+      shared: true,
+      contentFormatter: function(e) {
+				var content = "<table><tbody style='text-align:right'><tr><td colspan='3'>" + e.entries[0].dataPoint.x.getMonth() + '/' + e.entries[0].dataPoint.x.getDate() + ' ' + str_pad(e.entries[0].dataPoint.x.getHours()) + ':' + str_pad(e.entries[0].dataPoint.x.getMinutes()) + "</td></tr>";
+        e.entries.forEach(function(element, index) {
+          if (index % 10 == 0) content += "<tr>";
+          content += "<td style='color:" + element.dataSeries.color + "'>" + element.dataSeries.name + "</td><td>" + element.dataPoint.y.toLocaleString('en-us') + "</td>";
+          if ((index + 1) % 10 == 0) content += "</tr>";          
+        })
+        content += "</tbody></table>";
+        return content;
+			}
+    },
+    legend: {
+      cursor: "pointer",
+      verticalAlign: "top",
+      horizontalAlign: "center",
+      dockInsidePlotArea: true,
+      fontSize: 12,
+      itemclick: toogleDataSeries
+    },
+    data: vote_data
+  });
+  chart.render();
+}
+
+function toogleDataSeries(e) {
+  if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+    e.dataSeries.visible = false;
+  } else{
+    e.dataSeries.visible = true;
+  }
+  chart.render();
+}
+
+function showUrl() {
+  var url = document.location.href.split('?')[0] + '?';
+  var params_list = [];
+  Object.keys(params).forEach(function(key) {
+    if(params[key] == 0 || key == 'list') return;
+    params_list.push(key + '=' + params[key]);
+  });
+  if(params.filter) params_list.push('list=' + params.list.join(encodeURIComponent(',')));
+  url += params_list.join('&');
+  prompt('本頁網址', url);
+}
+
+</script>
+</html>
