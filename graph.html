@@ -7,7 +7,8 @@
 <body>
 <div id="chartContainer" style="height: 700px; width: 100%;"></div>
 <form>
-  日期 <input name="date" placeholder="YYYYMMDD" />
+  開始日期 <input name="date" placeholder="YYYYMMDD" size="10" maxlength="8" />
+  天數變化 <input name="delta" placeholder="0" size="4" />
   類型 <select name="type">
     <option value="0">當日</option>
     <option value="1">累積</option>
@@ -32,7 +33,8 @@ var vote_data = [];
 var chart;
 var today = new Date();
 var params = {
-  date: today.getFullYear() + str_pad(today.getMonth() + 1) + str_pad(today.getDate()) + '',
+  date: dateToStr(today),
+  delta: 0,
   type: 0,
   filter: 0,
   list: []
@@ -58,14 +60,25 @@ if(typeof(qs) !== 'undefined') {
   });
 }
 
-var title = params.date + ' ' + (params.type ? '累積' : '今日') + '票數變化圖';
+var dates = [params.date];
+var date_date = new Date(params.date.toString().replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+for(var i = 0; i < params.delta; i++) {
+  date_date.setDate(date_date.getDate() + 1);
+  dates.push(dateToStr(date_date));
+}
 
-fetch('https://zaka46.github.io/tpe48-votelog/' + (params.type ? 'data' : 'today') + '_table/' + params.date + '.csv')
-  .then(function(response) {
-    return response.text()
-  }).then(function(body) {
+var title = params.date + (dates.length == 1 ? '' : ' ~ ' + dates[dates.length - 1]) + ' ' + (params.type ? '累積' : '今日') + '票數變化圖';
+
+Promise.all(dates.map(function(date) {
+  return fetch('https://zaka46.github.io/tpe48-votelog/' + (params.type ? 'data' : 'today') + '_table/' + date + '.csv')
+    .then(function(response) {
+      return response.text();
+    });
+})).then(function(bodies) {
+  bodies.forEach(function(body, file_index) {
+    if(body[0] !== 't') return;
     body.split("\n").forEach(function(row, index) {
-      if(index == 0) {
+      if(index == 0 && vote_data.length == 0) {
         vote_data = row.split(',').map(function(element, index) {
           if(
             index == 0 ||
@@ -82,7 +95,7 @@ fetch('https://zaka46.github.io/tpe48-votelog/' + (params.type ? 'data' : 'today
             dataPoints: []
           }
         });
-      } else {
+      } else if(index !== 0) {
         row.split(',').forEach(function(element, index, array) {
           if(index == 0) return;
           if(typeof(vote_data[index].dataPoints) == 'undefined') return;
@@ -94,8 +107,9 @@ fetch('https://zaka46.github.io/tpe48-votelog/' + (params.type ? 'data' : 'today
         });
       }
     });
-    createChart();
   });
+  createChart();
+});
 
 function str_pad(n) {
   return String("0" + n).slice(-2);
@@ -172,6 +186,10 @@ function showUrl() {
   if(params.filter) params_list.push('list=' + params.list.join(encodeURIComponent(',')));
   url += params_list.join('&');
   prompt('本頁網址', url);
+}
+
+function dateToStr(d) {
+  return d.getFullYear() + str_pad(d.getMonth() + 1) + str_pad(d.getDate()) + '';
 }
 
 </script>
