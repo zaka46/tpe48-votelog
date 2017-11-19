@@ -13,6 +13,10 @@
     <option value="0">當日</option>
     <option value="1">累積</option>
   </select>
+  尺度 <select name="log">
+    <option value="0">線性</option>
+    <option value="1">對數</option>
+  </select>
   成員類型 <select name="filter">
     <option value="0">顯示全部</option>
     <option value="1">指定顯示</option>
@@ -32,10 +36,12 @@
 var vote_data = [];
 var chart;
 var today = new Date();
+var logBase = 2;
 var params = {
   date: dateToStr(today),
   delta: 0,
   type: 0,
+  log: 0,
   filter: 0,
   list: []
 };
@@ -99,10 +105,11 @@ Promise.all(dates.map(function(date) {
         row.split(',').forEach(function(element, index, array) {
           if(index == 0) return;
           if(typeof(vote_data[index].dataPoints) == 'undefined') return;
+          if(params.log && parseInt(element) == 0) return;
           var x = new Date(array[0] * 1000);
           vote_data[index].dataPoints.push({
             x: x,
-            y: parseInt(element)
+            y: params.log ? Math.log(element)/Math.log(logBase) : parseInt(element)
           })
         });
       }
@@ -127,19 +134,13 @@ function createChart() {
       labelFontSize: 12
     },
     axisY2: {
-      title: "票數",
+      title: "票數" + (params.log ? " (對數尺度) " : ""),
       labelFontSize: 12,
       titleFontSize: 15,
-/*      logarithmic: true,
       labelFormatter: function ( e ) {
-        var suffixes = ["", "K", "M", "B"];
-        var order = Math.max(Math.floor(Math.log(e.value) / Math.log(1000)), 0);
-        if(order > suffixes.length - 1)
-          order = suffixes.length - 1;
-        var suffix = suffixes[order];
-        return CanvasJS.formatNumber(e.value / Math.pow(1000, order)) + suffix;
-      }, */
-      includeZero :false
+        return params.log ? parseInt(Math.pow(logBase, e.value)) : e.value;
+      },
+      includeZero: false
     },
     toolTip: {
       shared: true,
@@ -147,7 +148,7 @@ function createChart() {
 				var content = "<table><tbody style='text-align:right'><tr><td colspan='3'>" + (e.entries[0].dataPoint.x.getMonth() + 1) + '/' + e.entries[0].dataPoint.x.getDate() + ' ' + str_pad(e.entries[0].dataPoint.x.getHours()) + ':' + str_pad(e.entries[0].dataPoint.x.getMinutes()) + "</td></tr>";
         e.entries.forEach(function(element, index) {
           if (index % 10 == 0) content += "<tr>";
-          content += "<td style='color:" + element.dataSeries.color + "'>" + element.dataSeries.name + "</td><td>" + element.dataPoint.y.toLocaleString('en-us') + "</td>";
+          content += "<td style='color:" + element.dataSeries.color + "'>" + element.dataSeries.name + "</td><td>" + (params.log ? Math.pow(logBase, element.dataPoint.y) : element.dataPoint.y).toLocaleString('en-us') + "</td>";
           if ((index + 1) % 10 == 0) content += "</tr>";          
         })
         content += "</tbody></table>";
