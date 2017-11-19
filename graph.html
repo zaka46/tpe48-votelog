@@ -144,7 +144,7 @@ function createChart() {
     toolTip: {
       shared: true,
       contentFormatter: function(e) {
-				var content = "<table><tbody style='text-align:right'><tr><td colspan='3'>" + e.entries[0].dataPoint.x.getMonth() + '/' + e.entries[0].dataPoint.x.getDate() + ' ' + str_pad(e.entries[0].dataPoint.x.getHours()) + ':' + str_pad(e.entries[0].dataPoint.x.getMinutes()) + "</td></tr>";
+				var content = "<table><tbody style='text-align:right'><tr><td colspan='3'>" + (e.entries[0].dataPoint.x.getMonth() + 1) + '/' + e.entries[0].dataPoint.x.getDate() + ' ' + str_pad(e.entries[0].dataPoint.x.getHours()) + ':' + str_pad(e.entries[0].dataPoint.x.getMinutes()) + "</td></tr>";
         e.entries.forEach(function(element, index) {
           if (index % 10 == 0) content += "<tr>";
           content += "<td style='color:" + element.dataSeries.color + "'>" + element.dataSeries.name + "</td><td>" + element.dataPoint.y.toLocaleString('en-us') + "</td>";
